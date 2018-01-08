@@ -1,6 +1,9 @@
 #include <stdio.h>
 
-int main() {
+FILE* disk;
+
+int main()
+{
     printf("Hello, World!\n");
     return 0;
 }
