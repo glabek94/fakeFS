@@ -26,13 +26,7 @@ static int fakeFS_read(const char *path, char *buf, size_t size, off_t offset, s
 
 static int fakeFS_write(const char *path, const char *buf, size_t size, off_t offset, struct fuse_file_info *fi);
 
-static struct fuse_operations fakeFS_oper = {
-        .getattr    = fakeFS_getattr, //necessary for everything
-        .readdir    = fakeFS_readdir, //to read root dir, hmm... is it necessary? assume that is is necessary
-        .mknod      = fakeFS_mknod, //to create new file -> copy
-        .unlink     = fakeFS_unlink, //for removing
-        .open       = fakeFS_open, //to cp
-        .read       = fakeFS_read, //to cp
-        .write      = fakeFS_write, //to cp
-};
+int fakeFS_start(const char* mountPoint);
+
+
 #endif //FAKEFS_FUSEFCNS_H

@@ -7,11 +7,12 @@
 
 #include <stdint.h>
 #include <stddef.h>
+#include "stdbool.h"
 
 struct superBlock
 {
     char fsName[12];
-    uint8_t blockSize;
+    size_t blockSize;
     size_t nBlocks;
     size_t blockFAT;
     size_t nBlocksFAT;
