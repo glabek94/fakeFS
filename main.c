@@ -6,10 +6,11 @@
 #include "fuseFcns.h"
 
 void createNewDisk(size_t size, char *path);
+void readDisk(char *path);
 
 int main()
 {
-    createNewDisk(512*100, "disk");
+    //createNewDisk(512*100, "disk");
     diskFile = fopen("disk", "r+b");
     readSuperblock(&superBlock);
 

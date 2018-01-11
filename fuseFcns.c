@@ -7,7 +7,7 @@
 #include "fuseFcns.h"
 #include "diskFcns.h"
 
-static int fakeFS_getattr(const char *path, struct stat *stbuf)
+static int fakeFS_getattr(const char* path, struct stat* stbuf)
 {
     memset(stbuf, 0, sizeof(struct stat));
     if (strcmp(path, "/") == 0) //root dir
@@ -33,7 +33,7 @@ static int fakeFS_getattr(const char *path, struct stat *stbuf)
     }
 }
 
-static int fakeFS_readdir(const char *path, void *buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info *fi)
+static int fakeFS_readdir(const char* path, void* buf, fuse_fill_dir_t filler, off_t offset, struct fuse_file_info* fi)
 {
     if (strcmp(path, "/") == 0) //only root dir
     {
@@ -43,7 +43,7 @@ static int fakeFS_readdir(const char *path, void *buf, fuse_fill_dir_t filler, o
 
         while (1)
         {
-            readBlock(currentBlock, (char *) file, superBlock.blockSize, &superBlock);
+            readBlock(currentBlock, (char*) file, superBlock.blockSize, &superBlock);
             for (size_t i = 0; i < numOfFiles; i++)
             {
                 if (file[i].inUse)
@@ -68,7 +68,7 @@ static int fakeFS_readdir(const char *path, void *buf, fuse_fill_dir_t filler, o
     return -ENOENT;
 }
 
-static int fakeFS_mknod(const char *path, mode_t mode, dev_t rdev)
+static int fakeFS_mknod(const char* path, mode_t mode, dev_t rdev)
 {
     if (createFile(path + 1, &superBlock))
     {
@@ -80,13 +80,13 @@ static int fakeFS_mknod(const char *path, mode_t mode, dev_t rdev)
     }
 }
 
-static int fakeFS_unlink(const char *path)
+static int fakeFS_unlink(const char* path)
 {
     //TODO: implement removing file
     return -ENOENT;
 }
 
-static int fakeFS_open(const char *path, struct fuse_file_info *fi)
+static int fakeFS_open(const char* path, struct fuse_file_info* fi)
 {
     struct fileStruct file;
     if (!findFile(path + 1, &file, &superBlock))
@@ -96,7 +96,7 @@ static int fakeFS_open(const char *path, struct fuse_file_info *fi)
     return 0;
 }
 
-static int fakeFS_read(const char *path, char *buf, size_t size, off_t offset, struct fuse_file_info *fi)
+static int fakeFS_read(const char* path, char* buf, size_t size, off_t offset, struct fuse_file_info* fi)
 {
     struct fileStruct file;
 
@@ -105,20 +105,32 @@ static int fakeFS_read(const char *path, char *buf, size_t size, off_t offset, s
         return -ENOENT;
     }
 
-    //TODO: reading always whole file, assumption that max size is 4096
-    //size always 4096
-    if (offset + size > file.size)
+    if (offset >= file.size)
     {
-      //  return 0;
+        return 0;
     }
 
+    size_t blocksToRead = size / superBlock.blockSize;
+
     size_t block = findBlockOfFile(&file, offset, &superBlock);
-    //readBlock(block, buf, size, &superBlock);
-    readBlock(block, buf, file.size, &superBlock);
-    return file.size;
+    readBlock(block, buf, superBlock.blockSize, &superBlock);
+
+    size_t readBlocks = 1;
+    for (readBlocks = 1; readBlocks < blocksToRead; readBlocks++)
+    {
+        size_t newBlock = findNextBlockInChain(block, &superBlock);
+        if (block == newBlock)
+        {
+            break;
+        }
+        newBlock = block;
+        readBlock(block, buf + readBlocks * superBlock.blockSize, superBlock.blockSize, &superBlock);
+    }
+
+    return readBlocks * superBlock.blockSize;
 }
 
-static int fakeFS_write(const char *path, const char *buf, size_t size, off_t offset, struct fuse_file_info *fi)
+static int fakeFS_write(const char* path, const char* buf, size_t size, off_t offset, struct fuse_file_info* fi)
 {
     struct fileStruct file;
 
@@ -164,9 +176,9 @@ static struct fuse_operations fakeFS_oper = {
         .write      = fakeFS_write, //to cp
 };
 
-int fakeFS_start(const char *mountPoint)
+int fakeFS_start(const char* mountPoint)
 {
-    char *newArgv[] = {"abc", "-d", (char *) mountPoint};
+    char* newArgv[] = {"abc", "-d", (char*) mountPoint};
     return fuse_main(3, newArgv, &fakeFS_oper, NULL);
 }
 
