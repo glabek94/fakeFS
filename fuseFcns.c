@@ -82,8 +82,31 @@ static int fakeFS_mknod(const char* path, mode_t mode, dev_t rdev)
 
 static int fakeFS_unlink(const char* path)
 {
-    //TODO: implement removing file
-    return -ENOENT;
+    struct fileStruct fileToRemove;
+    if (!findFile(path + 1, &fileToRemove, &superBlock))
+    {
+        return -ENOENT;
+    }
+
+    size_t block = findBlockOfFile(&fileToRemove, 0, &superBlock);
+
+    while (true)
+    {
+        size_t nextBlock = findNextBlockInChain(block, &superBlock);
+        deallocateBlock(block, &superBlock);
+
+        if (nextBlock == block)
+        {
+            break;
+        }
+        block = nextBlock;
+    }
+
+    fileToRemove.inUse = false;
+    fileToRemove.size = 0;
+    fileToRemove.firstBlock = 0;
+    updateFile(path + 1, &fileToRemove, &superBlock);
+    return 0;
 }
 
 static int fakeFS_open(const char* path, struct fuse_file_info* fi)

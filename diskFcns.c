@@ -6,37 +6,37 @@
 #include <memory.h>
 #include "diskFcns.h"
 
-void readSuperblock(struct superBlock *superBlock)
+void readSuperblock(struct superBlock* superBlock)
 {
     fseek(diskFile, 0, SEEK_SET);
     fread(superBlock, sizeof(struct superBlock), 1, diskFile);
 }
 
-void writeSuperblock(struct superBlock *superBlock)
+void writeSuperblock(struct superBlock* superBlock)
 {
-    writeBlock(0, (void *) superBlock, sizeof(struct superBlock), superBlock);
+    writeBlock(0, (void*) superBlock, sizeof(struct superBlock), superBlock);
 }
 
-void writeEmptyBlock(size_t where, struct superBlock *superBlock)
+void writeEmptyBlock(size_t where, struct superBlock* superBlock)
 {
     char buf[superBlock->blockSize];
     memset(buf, 0, sizeof(buf));
     writeBlock(where, buf, superBlock->blockSize, superBlock);
 }
 
-void readBlock(size_t block, char *data, size_t size, struct superBlock *superBlock)
+void readBlock(size_t block, char* data, size_t size, struct superBlock* superBlock)
 {
     fseek(diskFile, block * superBlock->blockSize, SEEK_SET);
     fread(data, size, 1, diskFile);
 }
 
-void writeBlock(size_t block, const char *data, size_t size, struct superBlock *superBlock)
+void writeBlock(size_t block, const char* data, size_t size, struct superBlock* superBlock)
 {
     fseek(diskFile, block * superBlock->blockSize, SEEK_SET);
     fwrite(data, size, 1, diskFile);
 }
 
-size_t findBlockOfFile(struct fileStruct *file, size_t offset, struct superBlock *superBlock)
+size_t findBlockOfFile(struct fileStruct* file, size_t offset, struct superBlock* superBlock)
 {
     if (offset >= file->size)
     {
@@ -54,7 +54,7 @@ size_t findBlockOfFile(struct fileStruct *file, size_t offset, struct superBlock
     return currentBlock;
 }
 
-size_t findEmptyBlock(struct superBlock *superBlock)
+size_t findEmptyBlock(struct superBlock* superBlock)
 {
     fseek(diskFile, superBlock->blockSize * superBlock->blockFAT, SEEK_SET);
     size_t toReturn;
@@ -74,7 +74,7 @@ size_t findEmptyBlock(struct superBlock *superBlock)
     return toReturn;
 }
 
-bool findFile(const char *name, struct fileStruct *file, struct superBlock *superBlock)
+bool findFile(const char* name, struct fileStruct* file, struct superBlock* superBlock)
 {
     size_t currentBlock = superBlock->blockRootDir;
     size_t filesInBlock = superBlock->blockSize / sizeof(struct fileStruct);
@@ -105,7 +105,7 @@ bool findFile(const char *name, struct fileStruct *file, struct superBlock *supe
     }
 }
 
-size_t allocateNewBlock(size_t currentLastBlock, struct superBlock *superBlock)
+size_t allocateNewBlock(size_t currentLastBlock, struct superBlock* superBlock)
 {
     size_t newBlock = findEmptyBlock(superBlock);
     if (newBlock != 0)
@@ -125,7 +125,18 @@ size_t allocateNewBlock(size_t currentLastBlock, struct superBlock *superBlock)
     return 0;
 }
 
-bool updateFile(const char *name, struct fileStruct *file, struct superBlock *superBlock)
+void deallocateBlock(size_t block, struct superBlock* superBlock)
+{
+    size_t pos = superBlock->blockFAT * superBlock->blockSize;
+    pos += block * sizeof(size_t);
+    fseek(diskFile, pos, SEEK_SET);
+    size_t toWrite = 0;
+    fwrite(&toWrite, sizeof(size_t), 1, diskFile);
+
+    writeEmptyBlock(block, superBlock);
+}
+
+bool updateFile(const char* name, struct fileStruct* file, struct superBlock* superBlock)
 {
     size_t currentBlock = superBlock->blockRootDir;
     size_t filesInBlock = superBlock->blockSize / sizeof(struct fileStruct);
@@ -157,7 +168,7 @@ bool updateFile(const char *name, struct fileStruct *file, struct superBlock *su
     }
 }
 
-bool createFile(const char *name, struct superBlock *superBlock)
+bool createFile(const char* name, struct superBlock* superBlock)
 {
     size_t newOffset;
     if (findFreeFilePosInRoot(&newOffset, superBlock))
@@ -189,7 +200,7 @@ bool createFile(const char *name, struct superBlock *superBlock)
 
 }
 
-size_t findNextBlockInChain(size_t block, struct superBlock *superBlock)
+size_t findNextBlockInChain(size_t block, struct superBlock* superBlock)
 {
     size_t pos = superBlock->blockFAT * superBlock->blockSize;
     pos += block * sizeof(size_t);
@@ -200,7 +211,7 @@ size_t findNextBlockInChain(size_t block, struct superBlock *superBlock)
     return toReturn;
 }
 
-bool findFreeFilePosInRoot(size_t *foundOffset, struct superBlock *superBlock)
+bool findFreeFilePosInRoot(size_t* foundOffset, struct superBlock* superBlock)
 {
     size_t currentBlock = superBlock->blockRootDir;
     size_t filesInBlock = superBlock->blockSize / sizeof(struct fileStruct);

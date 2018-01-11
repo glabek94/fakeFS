@@ -31,6 +31,8 @@ size_t findBlockOfFile(struct fileStruct *file, size_t offset, struct superBlock
 
 size_t allocateNewBlock(size_t currentLastBlock, struct superBlock *superBlock);
 
+void deallocateBlock(size_t block, struct superBlock* superBlock);
+
 size_t findEmptyBlock(struct superBlock *superBlock); //OK
 
 size_t findNextBlockInChain(size_t block, struct superBlock *superBlock);
