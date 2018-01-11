@@ -5,19 +5,42 @@
 #include "diskFcns.h"
 #include "fuseFcns.h"
 
-void createNewDisk(size_t size, char *path);
-void readDisk(char *path);
+void createNewDisk(size_t size, char* path); //size in bytes
+void readDisk(char* path);
 
-int main()
+int main(int argc, char* argv[])
 {
-    createNewDisk(512*100, "disk");
-    diskFile = fopen("disk", "r+b");
-    readSuperblock(&superBlock);
+    char usage[] = "usage: -c [path] [size in kB]\n       -m [disk path] [mount point]\n";
 
-    return fakeFS_start("/home/dawid/forFuse");
+    if (argc < 3)
+    {
+        printf("%s", usage);
+        return 0;
+    }
+
+    if (strcmp(argv[1], "-c") == 0)
+    {
+        char* path = argv[2];
+        size_t size = atol(argv[3]);
+        createNewDisk(size * 1024, path);
+        printf("Fake hardisk created. Name: %s, size: %ld.\n", path, size);
+        return 0;
+    }
+    else if (strcmp(argv[1], "-m") == 0)
+    {
+        diskFile = fopen(argv[2], "r+b");
+        readSuperblock(&superBlock);
+        printf("Fake harddisk mounted. Blocksize: %ld, n blocks: %ld.\n", superBlock.blockSize, superBlock.nBlocks);
+        return fakeFS_start(argv[3]);
+    }
+    else
+    {
+        printf("%s", usage);
+        return 0;
+    }
 }
 
-void createNewDisk(size_t size, char *path)
+void createNewDisk(size_t size, char* path)
 {
     diskFile = fopen(path, "wb");
 
