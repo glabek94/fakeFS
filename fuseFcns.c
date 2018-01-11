@@ -123,10 +123,15 @@ static int fakeFS_read(const char* path, char* buf, size_t size, off_t offset, s
         {
             break;
         }
-        newBlock = block;
+        block = newBlock;
         readBlock(block, buf + readBlocks * superBlock.blockSize, superBlock.blockSize, &superBlock);
     }
 
+    size_t actuallyRead = readBlocks * superBlock.blockSize;
+    if (offset + actuallyRead > file.size)
+    {
+        return file.size - offset;
+    }
     return readBlocks * superBlock.blockSize;
 }
 
